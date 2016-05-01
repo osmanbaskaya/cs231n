@@ -66,7 +66,7 @@ for y, cls in enumerate(classes):
         plt.axis('off')
         if i == 0:
             plt.title(cls)
-plt.show()
+# plt.show()
 
 
 # In[ ]:
@@ -134,7 +134,7 @@ mean_image = np.mean(X_train, axis=0)
 print mean_image[:10] # print a few of the elements
 plt.figure(figsize=(4,4))
 plt.imshow(mean_image.reshape((32,32,3)).astype('uint8')) # visualize the mean image
-plt.show()
+# plt.show()
 
 
 # In[ ]:
@@ -187,20 +187,20 @@ print 'loss: %f' % (loss, )
 # and gradient check it with the function we provided for you
 
 # Compute the loss and its gradient at W.
-loss, grad = svm_loss_naive(W, X_dev, y_dev, 0.0)
+# loss, grad = svm_loss_naive(W, X_dev, y_dev, 0.0)
 
 # Numerically compute the gradient along several randomly chosen dimensions, and
 # compare them with your analytically computed gradient. The numbers should match
 # almost exactly along all dimensions.
-from cs231n.gradient_check import grad_check_sparse
-f = lambda w: svm_loss_naive(w, X_dev, y_dev, 0.0)[0]
-grad_numerical = grad_check_sparse(f, W, grad)
+# from cs231n.gradient_check import grad_check_sparse
+# f = lambda w: svm_loss_naive(w, X_dev, y_dev, 0.0)[0]
+# grad_numerical = grad_check_sparse(f, W, grad)
 
 # do the gradient check once again with regularization turned on
 # you didn't forget the regularization gradient did you?
-loss, grad = svm_loss_naive(W, X_dev, y_dev, 1e2)
-f = lambda w: svm_loss_naive(w, X_dev, y_dev, 1e2)[0]
-grad_numerical = grad_check_sparse(f, W, grad)
+# loss, grad = svm_loss_naive(W, X_dev, y_dev, 1e2)
+# f = lambda w: svm_loss_naive(w, X_dev, y_dev, 1e2)[0]
+# grad_numerical = grad_check_sparse(f, W, grad)
 
 
 # ### Inline Question 1:
@@ -253,7 +253,8 @@ print 'difference: %f' % difference
 
 # ### Stochastic Gradient Descent
 # 
-# We now have vectorized and efficient expressions for the loss, the gradient and our gradient matches the numerical gradient. We are therefore ready to do SGD to minimize the loss.
+# We now have vectorized and efficient expressions for the loss, the gradient and our gradient matches the numerical gradient.
+# We are therefore ready to do SGD to minimize the loss.
 
 # In[ ]:
 
@@ -263,7 +264,7 @@ from cs231n.classifiers import LinearSVM
 svm = LinearSVM()
 tic = time.time()
 loss_hist = svm.train(X_train, y_train, learning_rate=1e-7, reg=5e4,
-                      num_iters=1500, verbose=True)
+                      num_iters=200, verbose=True)
 toc = time.time()
 print 'That took %fs' % (toc - tic)
 
@@ -272,10 +273,10 @@ print 'That took %fs' % (toc - tic)
 
 # A useful debugging strategy is to plot the loss as a function of
 # iteration number:
-plt.plot(loss_hist)
-plt.xlabel('Iteration number')
-plt.ylabel('Loss value')
-plt.show()
+# plt.plot(loss_hist)
+# plt.xlabel('Iteration number')
+# plt.ylabel('Loss value')
+# plt.show()
 
 
 # In[ ]:
@@ -319,7 +320,24 @@ best_svm = None # The LinearSVM object that achieved the highest validation rate
 # confident that your validation code works, you should rerun the validation   #
 # code with a larger value for num_iters.                                      #
 ################################################################################
-pass
+for lr in np.linspace(learning_rates[0], learning_rates[1], 5):
+    for rs in np.linspace(regularization_strengths[0], regularization_strengths[1], 5):
+
+        svm = LinearSVM()
+        loss_hist = svm.train(X_train, y_train, learning_rate=lr, reg=rs,
+                              num_iters=1500, verbose=True)
+        train_accuracy = np.mean(y_train == svm.predict(X_train))
+        val_accuracy = np.mean(y_val == svm.predict(X_val))
+        if best_val < val_accuracy:
+            best_val = val_accuracy
+            best_svm = svm
+
+        results[(lr, rs)] = train_accuracy, val_accuracy
+
+
+
+
+
 ################################################################################
 #                              END OF YOUR CODE                                #
 ################################################################################
