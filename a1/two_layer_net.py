@@ -199,9 +199,9 @@ net = TwoLayerNet(input_size, hidden_size, num_classes)
 
 # Train the network
 stats = net.train(X_train, y_train, X_val, y_val,
-            num_iters=1000, batch_size=200,
-            learning_rate=1e-4, learning_rate_decay=0.95,
-            reg=0.5, verbose=True)
+                  num_iters=1000, batch_size=200,
+                  learning_rate=1e-4, learning_rate_decay=0.95,
+                  reg=0.5, verbose=True)
 
 # Predict on the validation set
 val_acc = (net.predict(X_val) == y_val).mean()

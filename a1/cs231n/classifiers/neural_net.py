@@ -76,14 +76,15 @@ class TwoLayerNet(object):
         # Store the result in the scores variable, which should be an array of      #
         # shape (N, C).                                                             #
         #############################################################################
-        a1 = X.dot(W1) + b1  # N x H
-        h1 = np.maximum(np.zeros_like(a1), a1)  # N x H
-        scores = h1.dot(W2) + b2  # N x C,
+        layer1 = X.dot(W1) + b1  # N x H
+        layer2 = np.maximum(np.zeros_like(layer1), layer1)  # N x H
+        layer3 = layer2.dot(W2) + b2  # N x C,
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
 
         # If the targets are not given then jump out, we're done
+        scores = layer3
         if y is None:
             return scores
 
@@ -95,15 +96,34 @@ class TwoLayerNet(object):
         # classifier loss. So that your results match ours, multiply the            #
         # regularization loss by 0.5                                                #
         #############################################################################
-        rows = np.exp(scores).sum(axis=1)
-        loss = np.mean(-scores[np.arange(N), y] + np.log(rows))
+
+        #scores -= np.max(scores, axis=0)  # for computational stability.
+        scores = np.exp(scores)
+        total_scores = np.sum(scores, axis=1, keepdims=True)
+        normalized_scores = scores / total_scores
+        loss = -np.log(normalized_scores[np.arange(0, N), y]).mean()
         loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))  # regularization
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
 
         # Backward pass: compute gradients
-        grads = {}
+
+        dloss = 1.0
+        dlayer3 = normalized_scores
+        dlayer3[np.arange(0, N), y] -= 1
+        dlayer3 *= dloss
+        dlayer3 /= N
+        dlayer2 = dlayer3.dot(W2.T)
+        dlayer1 = dlayer2 * (layer1 >= 0)
+        dW2 = layer2.T.dot(dlayer3)
+        dW1 = X.T.dot(dlayer1)
+
+        dW2 += reg * W2
+        dW1 += reg * W1
+
+        db2 = dlayer3.sum(axis=0)
+        db1 = dlayer1.sum(axis=0)
         #############################################################################
         # TODO: Compute the backward pass, computing the derivatives of the weights #
         # and biases. Store the results in the grads dictionary. For example,       #
@@ -113,6 +133,7 @@ class TwoLayerNet(object):
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
+        grads = dict(W1=dW1, W2=dW2, b1=db1, b2=db2)
 
         return loss, grads
 
@@ -155,12 +176,10 @@ class TwoLayerNet(object):
             #########################################################################
             for i in xrange(iterations_per_epoch):
                 X_batch = X[i*batch_size:(i+1)*batch_size, :]
-                y_batch = y_batch[i*batch_size:(i+1)*batch_size]
+                y_batch = y[i*batch_size:(i+1)*batch_size]
                 # Compute loss and gradients using the current minibatch
                 loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
                 loss_history.append(loss)
-                if verbose and it % 100 == 0:
-                    print 'iteration %d / %d: loss %f' % (it, num_iters, loss)
 
 
             #########################################################################
@@ -169,6 +188,13 @@ class TwoLayerNet(object):
             # using stochastic gradient descent. You'll need to use the gradients   #
             # stored in the grads dictionary defined above.                         #
             #########################################################################
+                self.params["W1"] -= learning_rate * grads['W1']
+                self.params["W2"] -= learning_rate * grads['W2']
+                self.params["b1"] -= learning_rate * grads['b1']
+                self.params["b2"] -= learning_rate * grads['b2']
+
+            if verbose:
+                print '\riteration %d / %d: loss %f' % (it, num_iters, loss),
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
